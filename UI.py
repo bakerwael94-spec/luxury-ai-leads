@@ -89,7 +89,7 @@ st.sidebar.write(f"👤 {st.session_state.user}")
 
 
 # 🔐 OpenAI client
-##client = OpenAI(api_key="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")  # replace with your real key
+client = OpenAI(api_key="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")  # replace with your real key
 
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
