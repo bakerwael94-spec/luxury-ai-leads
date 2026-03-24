@@ -34,7 +34,7 @@ if "logged_in" not in st.session_state: ## Create Login State
 ## Load Existing Leads on App Start
 
 if "leads" not in st.session_state:
-    if os.path.exists(DB_FILE):
+    if os.path.exists(DB_FILE) and os.path.getsize(DB_FILE) > 0:
         st.session_state.leads = pd.read_csv(DB_FILE).to_dict("records")
     else:
         st.session_state.leads = []
