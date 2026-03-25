@@ -28,6 +28,25 @@ import streamlit as st
 from openai import OpenAI
 
 
+
+#########################################3  Add App Usage Tracking (see how people use it).
+
+## Step 1 — Track App Usage
+
+#We count:
+
+#total logins
+#leads created
+#active users
+
+if "stats" not in st.session_state: 
+    st.session_state.stats = {
+        "logins": 0,
+        "leads_created": 0
+    }
+
+############################################3  
+
 if "logged_in" not in st.session_state: ## Create Login State
     st.session_state.logged_in = False
 
@@ -52,6 +71,7 @@ if not st.session_state.logged_in:
         if username in USERS and USERS[username] == password:
             st.session_state.logged_in = True
             st.session_state.user = username
+            st.session_state.stats["logins"] += 1 # Count Logins
             st.rerun()
         else:
             st.error("Invalid username or password")
@@ -186,6 +206,8 @@ if st.button("Analyze Lead"):
         
     })
 
+    st.session_state.stats["leads_created"] += 1 ## Count Leads
+
 pd.DataFrame(st.session_state.leads).to_csv(DB_FILE, index=False) # Save Leads to Database
 
 # ✅ Show history (MUST be OUTSIDE button)
@@ -274,6 +296,15 @@ if page == "Dashboard":
         col3.metric("Top Probability", f"{top_prob}%")
         col4.metric("High Quality", high_quality)
 
+        ##3##############################3333  Show Usage Dashboard
+
+        st.subheader("📊 Usage Stats")
+
+        col1, col2 = st.columns(2)
+
+        col1.metric("Total Logins", st.session_state.stats["logins"])
+        col2.metric("Leads Created", st.session_state.stats["leads_created"])
+        ###########################################3
 ## Add Analytics (Tab3)
 #with tab3:
 
@@ -545,3 +576,17 @@ if "edit_lead" in st.session_state:
 #agent sees all leads
 
 #We fix that.
+
+##You now have:
+
+#🔐 Login system
+#👥 Multi-user support
+#🧠 AI lead scoring
+#✉️ AI follow-up generation
+#📊 Dashboard analytics
+#🔎 Search & filters
+#📥 CSV export
+#💾 Persistent storage
+#☁️ Cloud deployment
+
+# real SaaS MVP #
