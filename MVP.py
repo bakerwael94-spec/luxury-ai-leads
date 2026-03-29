@@ -105,7 +105,7 @@ if "leads" not in st.session_state:
 
 #--------------------------------------------------------------------------        
 # 🔐 OpenAI client
-# client = OpenAI(api_key="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")  # replace with your real key
+#client = OpenAI(api_key="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")  # replace with your real key
 
 # This is for the App UI (safer)
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"]) 
