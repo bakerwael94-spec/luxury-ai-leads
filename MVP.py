@@ -105,10 +105,10 @@ if "leads" not in st.session_state:
 
 #--------------------------------------------------------------------------        
 # 🔐 OpenAI client
-#client = OpenAI(api_key="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")  # replace with your real key
+client = OpenAI(api_key="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")  # replace with your real key
 
 # This is for the App UI (safer)
-client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"]) 
+#client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"]) 
 #--------------------------------------------------------------------------
 # Head title
 st.title("🏡 Luxury AI Lead Intelligence Analyzer")
