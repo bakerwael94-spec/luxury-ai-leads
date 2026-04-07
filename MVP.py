@@ -44,6 +44,13 @@ from openai import OpenAI
 import streamlit as st # Import library as stremlit app
 import pandas as pd   ## This imports Pandas library for working with tables / CSV / Excel / data .... read/write CSV
 import os
+import datetime
+# Add email function
+import smtplib
+from email.mime.text import MIMEText
+import hashlib # Import hashlib 
+import random
+import sqlite3
 #--------------------------------------------------------------------------
 #Add Sidebar Title
 st.sidebar.title("🏡 Luxury AI")
@@ -56,10 +63,102 @@ st.set_page_config(
     layout="wide"
 )
 #--------------------------------------------------------------------------
+# Create Hash Function
+def hash_password(password):
+    return hashlib.sha256(password.encode()).hexdigest()
+#--------------------------------------------------------------------------
+# Create send function 
+# This function sends a password reset email with a verification code to the user 📧🔐
+def send_reset_email(to_email, code):
+    msg = MIMEText(f"Your password reset code is: {code}")
+    msg["Subject"] = "Password Reset Code"
+    msg["From"] = "bakerwael94@gmail.com"
+    msg["To"] = to_email
+
+    server = smtplib.SMTP("smtp.gmail.com", 587)
+    server.starttls()
+    server.login("bakerwael94@gmail.com", "ctytmfqcquuncuas")
+    server.send_message(msg)
+    server.quit()
+#--------------------------------------------------------------------------   
+# Create database
+# We upgrade to a real database (SQLite — simple & powerful)
+# conn = connection to database 🔌
+# cursor = tool to run SQL commands 🛠️
+conn = sqlite3.connect("leads.db", check_same_thread=False)
+cursor = conn.cursor()
+
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS leads (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT,
+    score INTEGER,
+    quality TEXT,
+    type TEXT,
+    probability INTEGER,
+    area TEXT,
+    message TEXT,
+    user TEXT
+)
+""")
+
+conn.commit() # save changes to the database permanently 💾
+#--------------------------------------------------------------------------   
+# Create users table
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS users (
+    username TEXT PRIMARY KEY,
+    password TEXT,
+    plan TEXT,
+    email TEXT
+)
+""")
+
+conn.commit()
+#--------------------------------------------------------------------------
 # Save leads permanently (so they don’t disappear when app refreshes)
 # simple CSV database (fastest + reliable).
 
 DB_FILE = "leads_db.csv" # create database file
+#--------------------------------------------------------------------------
+# Reset code storage
+if "reset_code" not in st.session_state:
+    st.session_state.reset_code = None
+#--------------------------------------------------------------------------
+## Step 1 — Track App Usage
+
+# We count: total logins, leads created and active users
+
+if "stats" not in st.session_state:  # initialization
+    st.session_state.stats = {
+        "logins": 0,
+        "leads_created": 0
+    }
+#--------------------------------------------------------------------------
+# Create send function
+def send_upgrade_email(user):
+    try:
+        msg = MIMEText(f"User '{user}' requested Pro upgrade.")
+        msg["Subject"] = "Upgrade Request"
+        msg["From"] = "bakerwael94@gmail.com"
+        msg["To"] = "bakerwael94@gmail.com"
+
+        server = smtplib.SMTP("smtp.gmail.com", 587)
+        server.starttls()
+        server.ehlo()
+        server.login("bakerwael94@gmail.com", "ctytmfqcquuncuas")
+        server.send_message(msg)
+        server.quit()
+
+        print("EMAIL SENT")
+
+    except Exception as e:
+        print("ERROR:", e)
+#--------------------------------------------------------------------------
+# Add Free Limit
+# Free users → 5 leads/day
+# Later → Pro unlimited
+FREE_LIMIT = 5
 #--------------------------------------------------------------------------
 # 🔐 Login
 # Username
@@ -69,46 +168,182 @@ DB_FILE = "leads_db.csv" # create database file
 # Only after login → show app.
 
 # Add Users
-USERS = {
-    "admin": "1234",
-    "agent": "1234"
+#USERS = {
+    #"admin": "1234",
+    #"agent": "1234"
+#}
+# Add User Plans
+USER_PLANS = {
+    "admin": "pro",
+    "agent": "free"
 }
-
 # Create Login State
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 
+# initialize trial / This code stores the start date of a trial in Streamlit session state 📅
+if "trial_start" not in st.session_state:
+    st.session_state.trial_start = datetime.date.today()
+
 # Login Screen
 if not st.session_state.logged_in:
 
-    st.title("🔐 Login")
+    auth_mode = st.radio("Select", ["Login", "Sign Up", "Forgot Password"])
 
-    username = st.text_input("Username")
-    password = st.text_input("Password", type="password")
+    if auth_mode == "Sign Up":
 
-    if st.button("Login"):
-        if username in USERS and USERS[username] == password:
-            st.session_state.logged_in = True
-            st.session_state.user = username
-            st.rerun()
-        else:
-            st.error("Invalid username or password")
+        st.subheader("Create Account")
+
+        new_user = st.text_input("Username")
+        new_pass = st.text_input("Password", type="password")
+        email = st.text_input("Email")
+
+        if st.button("Create Account"):
+
+            cursor.execute(
+                "SELECT * FROM users WHERE username=?",
+                (new_user,)
+            )
+            # cursor.execute(...) → search database
+            # fetchone() → get first result
+            # existing → store result
+            existing = cursor.fetchone()
+
+            if existing:
+                st.error("User already exists")
+            else:
+                cursor.execute(
+                    "INSERT INTO users (username, password, plan, email) VALUES (?, ?, ?, ?)",
+                    (new_user, hash_password(new_pass), "free", email) # Hash Password on Signup
+                )
+
+                conn.commit()
+
+                st.success("Account created. You can login now.")
+    
+
+    if auth_mode == "Login":
+
+        username = st.text_input("Username")
+        password = st.text_input("Password", type="password")
+
+        if st.button("Login"):
+
+            cursor.execute(
+                "SELECT * FROM users WHERE username=? AND password=?",
+                (username, hash_password(password)) # Hash Password on Login
+            )
+
+            user = cursor.fetchone()
+
+            if user:
+                st.session_state.logged_in = True
+                st.session_state.user = user[0]
+                st.session_state.plan = user[2]
+                st.rerun()
+            else:
+                st.error("Invalid username or password")
+     
+    if auth_mode == "Forgot Password": # Forgot Password (Email)
+
+        st.subheader("Reset Password")
+
+        reset_user = st.text_input("Username")
+
+        if st.button("Send Code"):
+
+            cursor.execute(
+                "SELECT email FROM users WHERE username=?",
+                (reset_user,)
+            )
+
+            user = cursor.fetchone()
+            
+            if user:
+                code = str(random.randint(100000, 999999))
+                st.session_state.reset_code = code
+                st.session_state.reset_user = reset_user
+                
+                send_reset_email(user[0], code)
+                st.success("Reset code sent to your email")
+            else:
+                st.error("User not found")
+        # Verify code + reset
+        code_input = st.text_input("Enter Code")
+        new_pass = st.text_input("New Password", type="password")
+
+        if st.button("Confirm Reset"):
+
+            if code_input == st.session_state.reset_code:
+
+                cursor.execute(
+                    "UPDATE users SET password=? WHERE username=?",
+                    (hash_password(new_pass), st.session_state.reset_user)
+                )
+
+                conn.commit()
+
+                st.success("Password updated")
+            else:
+                st.error("Invalid code")
 
     st.stop()
 #-------------------------------------------------------------------------- 
-## Load Existing Leads on App Start
-if "leads" not in st.session_state:
-    if os.path.exists(DB_FILE):
-        st.session_state.leads = pd.read_csv(DB_FILE).to_dict("records")
-    else:
-        st.session_state.leads = []
+## start as FREE
+## get 7-day PRO trial
+## after trial → back to FREE
+####
+# Day 1–7:
+# Plan = TRIAL → unlimited
+# After 7 days:
+# Plan = FREE → limited
 
+# Admin:
+# Plan = PRO → unlimited forever
+TRIAL_DAYS = 7
+# Calculate Trial Days
+today = datetime.date.today()
+trial_days_used = (today - st.session_state.trial_start).days
+# Give trial access 
+if st.session_state.plan == "free" and trial_days_used < TRIAL_DAYS:
+    st.session_state.plan = "trial"
+#--------------------------------------------------------------------------
+## Load Existing Leads on App Start
+#if "leads" not in st.session_state:
+    #if os.path.exists(DB_FILE):
+        #st.session_state.leads = pd.read_csv(DB_FILE).to_dict("records")
+    #else:
+        #st.session_state.leads = []
+# Load Leads From DB
+#cursor.execute("SELECT * FROM leads")
+#rows = cursor.fetchall()
+
+#columns = ["id", "name", "score", "quality", "type", "probability", "area", "message", "user"]
+
+#st.session_state.leads = [dict(zip(columns, row)) for row in rows]
+
+
+def load_leads():
+    cursor.execute("SELECT * FROM leads")
+    rows = cursor.fetchall()
+
+    columns = ["id","name","score","quality","type","probability","area","message","user"]
+
+    return [dict(zip(columns, row)) for row in rows]
+
+## Upgrade User to Pro When payment succeeds:
+cursor.execute(
+    "UPDATE users SET plan='pro' WHERE username=?",
+    (st.session_state.user,)
+)
+
+conn.commit()
 #--------------------------------------------------------------------------        
 # 🔐 OpenAI client
-client = OpenAI(api_key="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")  # replace with your real key
+
 
 # This is for the App UI (safer)
-#client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"]) 
+client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"]) 
 #--------------------------------------------------------------------------
 # Head title
 st.title("🏡 Luxury AI Lead Intelligence Analyzer")
@@ -116,7 +351,7 @@ st.caption("AI-powered luxury real estate lead scoring & follow-up")
 #--------------------------------------------------------------------------
 # 🧠 Initialize memory / store leads in memory (no database yet) / Store leads + history
 if "leads" not in st.session_state:  ## st.session_state: Streamlit memory (stores values between reruns)
-    st.session_state.leads = []
+    st.session_state.leads = load_leads()
 #--------------------------------------------------------------------------
 # 📝 Inputs
 name = st.text_input("Client Name")
@@ -125,10 +360,23 @@ area = st.text_input("Preferred Area")
 timeline = st.selectbox("Timeline", ["1 month", "3 months", "6 months"])
 message = st.text_area("Client Message")
 #--------------------------------------------------------------------------
+## Show Limit Warning in Main UI
+if st.session_state.plan == "free":
+    st.info(f"Free Plan: {FREE_LIMIT} leads limit")
+#--------------------------------------------------------------------------
 # 🚀 Analyze Button
 
 if st.button("Analyze Lead"):
 
+    # Count User Leads
+    user_leads = [
+        lead for lead in st.session_state.leads
+        if lead["user"] == st.session_state.user   
+    ]
+    # Block When Limit Reached
+    if st.session_state.plan == "free" and len(user_leads) >= FREE_LIMIT:
+        st.warning("Free plan limit reached. Upgrade to Pro.")
+        st.stop()
     # 🔹 Scoring
     score = 0
 
@@ -190,31 +438,60 @@ if st.button("Analyze Lead"):
     # 💬 Show AI message
     st.write("### AI Suggested Message:")
     st.success(ai_message)
+
+    # 💾 Save lead
+    cursor.execute("""
+    INSERT INTO leads (name, score, quality, type, probability, area, message, user)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    """, (
+        name,
+        score,
+        quality,
+        lead_type,
+        probability,
+        area,
+        ai_message,
+        st.session_state.user ## Save User With Each Lead
+    ))
+    st.session_state.stats["leads_created"] += 1 ## Count Leads
+    conn.commit()
+
+    st.session_state.leads = load_leads()
+
+    #pd.DataFrame(st.session_state.leads).to_csv(DB_FILE, index=False) # Save Leads to Database
 #--------------------------------------------------------------------------
-# 💾 Save lead
-    st.session_state.leads.append({
-        "name": name,
-        "score": score,
-        "quality": quality,
-        "type": lead_type,
-        "probability": probability,
-        "area": area,
-        "message": ai_message,
-        "user": st.session_state.user ## Save User With Each Lead
-        
-    })
-    pd.DataFrame(st.session_state.leads).to_csv(DB_FILE, index=False) # Save Leads to Database
-#--------------------------------------------------------------------------
+
 ## 📊 Dashboard | 📋 Leads | 📈 Analytics
 
 page = st.sidebar.radio(
     "Navigation",
-    ["Dashboard", "Leads", "Analytics"]
+    ["Dashboard", "Leads", "Analytics", "Pricing"]
 )
 # 
 st.sidebar.markdown("---")
 # Show User in Sidebar
 st.sidebar.write(f"👤 {st.session_state.user}") 
+# Show Plan in Sidebar
+st.sidebar.write(f"Plan: {st.session_state.plan.upper()}")
+## Show Upgrade Message for Free Users
+if st.session_state.plan == "free":
+    st.sidebar.warning("Free Plan limited to 5 leads")
+
+## Add Upgrade Button
+#if st.session_state.plan == "free":
+    #if st.sidebar.button("🚀 Upgrade to Pro"):
+        #st.sidebar.info("Contact admin to upgrade your account")
+
+#if st.sidebar.button("🚀 Upgrade to Pro"):
+    #send_upgrade_email(st.session_state.user)
+    #st.sidebar.success("Upgrade request sent")
+
+PRO_LINK = "https://buy.stripe.com/test_8x24gy95I9s5duR1Qz8AE00"
+
+#if st.sidebar.button("🚀 Upgrade to Pro"):
+    #st.markdown(f"[Click here to upgrade]({PRO_LINK})")
+st.sidebar.link_button("🚀 Upgrade to Pro", PRO_LINK)
+
 # Add Logout Button in Sidebar
 if st.sidebar.button("🚪 Logout"):
     st.session_state.logged_in = False
@@ -222,6 +499,10 @@ if st.sidebar.button("🚪 Logout"):
 # Add demo user logo
 st.sidebar.markdown("---")
 st.sidebar.write("👤 Demo User")
+# Show Trial Banner
+if st.session_state.plan == "trial":
+    remaining = TRIAL_DAYS - trial_days_used
+    st.sidebar.success(f"Trial Active: {remaining} days left")
 #--------------------------------------------------------------------------
 # Show history (MUST be OUTSIDE button)
 ## add a button under each lead so the user can quickly copy the AI message. 
@@ -243,6 +524,13 @@ if page == "Dashboard":
         col2.metric("Avg Score", round(avg_score))
         col3.metric("Top Probability", f"{top_prob}%")
         col4.metric("High Quality", high_quality)
+
+        # Show Usage Dashboard
+        st.subheader("📊 Usage Stats")
+
+        col1, col2 = st.columns(2)
+        col1.metric("Total Logins", st.session_state.stats["logins"])
+        col2.metric("Leads Created", st.session_state.stats["leads_created"])
 
     st.divider()
 
@@ -356,8 +644,13 @@ if page == "Leads":
             # DELETE BUTTON
             with col3:
                 if st.button("🗑", key=f"delete_{i}"):
-                    st.session_state.leads.remove(lead) # Delete logic
-                    pd.DataFrame(st.session_state.leads).to_csv(DB_FILE, index=False) # Save After Delete 
+                    #st.session_state.leads.remove(lead) # Delete logic
+                    #pd.DataFrame(st.session_state.leads).to_csv(DB_FILE, index=False) # Save After Delete 
+                    #st.rerun()
+                    cursor.execute("DELETE FROM leads WHERE id=?", (lead["id"],))
+                    conn.commit()
+
+                    st.session_state.leads = load_leads()
                     st.rerun()
 
             st.progress(lead["probability"] / 100) # progress bar
@@ -379,6 +672,35 @@ if page == "Analytics":
         st.write("### Probability Distribution")
         st.bar_chart(df["probability"])
 
+if page == "Pricing":
+
+    st.title("💳 Pricing Plans")
+
+    col1, col2 = st.columns(2)
+
+    # Free Plan
+    with col1:
+        st.subheader("🆓 Free Plan")
+        st.write("✔ Up to 5 leads")
+        st.write("✔ Basic AI messages")
+        st.write("✔ Dashboard access")
+        st.write("❌ No priority support")
+
+        st.button("Current Plan" if st.session_state.plan == "free" else "Select Free")
+
+    # Pro Plan
+    with col2:
+        st.subheader("🚀 Pro Plan")
+        st.write("✔ Unlimited leads")
+        st.write("✔ Advanced AI messaging")
+        st.write("✔ Full analytics")
+        st.write("✔ Priority support")
+
+        if st.session_state.plan == "pro":
+            st.success("You are on Pro Plan")
+        else:
+            if st.button("Upgrade to Pro"):
+                st.info("Contact admin to upgrade (payment integration coming soon)")
 #--------------------------------------------------------------------------
 ## Add edit form
 if "edit_lead" in st.session_state:
