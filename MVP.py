@@ -472,7 +472,7 @@ if st.button("Analyze Lead"):
 
 page = st.sidebar.radio(
     "Navigation",
-    ["Dashboard", "Leads", "Analytics", "Pricing"]
+    ["Home","Dashboard", "Leads", "Analytics", "Pricing"]
 )
 # 
 st.sidebar.markdown("---")
@@ -708,6 +708,44 @@ if page == "Pricing":
         else:
             if st.button("Upgrade to Pro"):
                 st.info("Contact admin to upgrade (payment integration coming soon)")
+
+if page == "Home":
+
+    st.title("🏡 Luxury AI")
+    st.subheader("AI-Powered Real Estate Lead Intelligence")
+
+    st.write("""
+    Close more deals with AI-driven insights.
+    Analyze leads, predict conversions, and generate high-end follow-ups instantly.
+    """)
+
+    st.divider()
+
+    col1, col2, col3 = st.columns(3)
+
+    col1.metric("⚡ Faster Deals", "3x")
+    col2.metric("🎯 Higher Conversion", "+40%")
+    col3.metric("🤖 AI Automation", "24/7")
+
+    st.divider()
+
+    st.subheader("Why Luxury AI?")
+
+    st.write("""
+    ✔ Smart lead scoring  
+    ✔ AI-generated follow-ups  
+    ✔ Deal probability prediction  
+    ✔ CRM dashboard  
+    ✔ Multi-user platform  
+    """)
+
+    st.divider()
+
+    if st.session_state.plan == "free":
+        st.warning("Start your free trial now 🚀")
+
+        if st.button("Get Started"):
+            st.success("Go to Leads page to begin")
 #--------------------------------------------------------------------------
 ## Add edit form
 if "edit_lead" in st.session_state:
