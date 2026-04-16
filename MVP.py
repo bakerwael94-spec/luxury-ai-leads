@@ -109,6 +109,18 @@ CREATE TABLE IF NOT EXISTS leads (
 """)
 
 conn.commit() # save changes to the database permanently 💾
+#--------------------------------------------------------------------------
+# Create users table
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS users (
+    username TEXT PRIMARY KEY,
+    password TEXT,
+    plan TEXT,
+    email TEXT
+)
+""")
+
+conn.commit()
 #--------------------------------------------------------------------------  
 # Save Requests (Database)
 cursor.execute("""
@@ -118,18 +130,6 @@ CREATE TABLE IF NOT EXISTS demo_requests (
     company TEXT,
     email TEXT,
     message TEXT
-)
-""")
-
-conn.commit()
-#--------------------------------------------------------------------------
-# Create users table
-cursor.execute("""
-CREATE TABLE IF NOT EXISTS users (
-    username TEXT PRIMARY KEY,
-    password TEXT,
-    plan TEXT,
-    email TEXT
 )
 """)
 
@@ -759,10 +759,17 @@ if page == "Home":
 
         if st.button("Get Started"):
             st.success("Go to Leads page to begin")
+      
+    ## Add Contact Section
+    st.divider()  
+    st.subheader("📩 Request Demo")  
 
-    
+    name = st.text_input("Your Name")
+    company = st.text_input("Company")
+    email = st.text_input("Email")
+    message = st.text_area("Message")
 
-    if st.button("Request Demo"): ## Add Contact Section
+    if st.button("Request Demo"): 
 
         cursor.execute("""
         INSERT INTO demo_requests (name, company, email, message)
