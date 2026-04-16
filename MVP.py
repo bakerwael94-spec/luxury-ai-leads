@@ -833,6 +833,57 @@ if page == "Admin":
         conn.commit()
         st.success("Deleted")
         st.rerun()
+
+
+    st.divider()
+    st.subheader("👤 User Management") ## User Management (Admin can create/delete users) 👤
+
+    new_user = st.text_input("Username") ## Create User (Admin)
+    new_pass = st.text_input("Password", type="password")
+    new_plan = st.selectbox("Plan", ["free", "pro"])
+
+    if st.button("Create User"):
+
+        cursor.execute(
+            "INSERT INTO users (username, password, plan) VALUES (?, ?, ?)",
+            (new_user, hash_password(new_pass), new_plan)
+        )
+
+        conn.commit()
+
+        st.success("User created")
+
+    cursor.execute("SELECT username, plan FROM users") ## Show Users
+    users = cursor.fetchall()
+
+    df_users = pd.DataFrame(users, columns=["Username", "Plan"])
+    st.dataframe(df_users)
+
+    delete_user = st.text_input("Delete Username")  ## Delete User
+
+    if st.button("Delete User"):
+        cursor.execute(
+            "DELETE FROM users WHERE username=?",
+            (delete_user,)
+        )
+
+        conn.commit()
+
+        st.success("User deleted")
+        st.rerun()
+
+    upgrade_user = st.text_input("Upgrade Username") ## Upgrade User
+
+    if st.button("Make Pro"):
+        cursor.execute(
+            "UPDATE users SET plan='pro' WHERE username=?",
+            (upgrade_user,)
+        )
+
+        conn.commit()
+
+        st.success("User upgraded")
+
 #--------------------------------------------------------------------------
 ## Add edit form
 if "edit_lead" in st.session_state:
