@@ -485,7 +485,7 @@ if st.button("Analyze Lead"):
 
 page = st.sidebar.radio(
     "Navigation",
-    ["Home","Dashboard", "Leads", "Analytics", "Pricing"]
+    ["Home","Dashboard", "Leads", "Analytics", "Pricing", "Admin"]
 )
 # 
 st.sidebar.markdown("---")
@@ -779,6 +779,34 @@ if page == "Home":
         conn.commit()
 
         st.success("Request received. We will contact you.")
+
+if page == "Admin":
+
+    if st.session_state.user != "admin":
+        st.error("Access denied")
+        st.stop()
+
+    st.title("📊 Admin Panel")
+    st.subheader("Demo Requests")
+
+    cursor.execute("SELECT * FROM demo_requests")
+    rows = cursor.fetchall()
+
+    columns = ["ID", "Name", "Company", "Email", "Message"]
+
+    if rows:
+        df = pd.DataFrame(rows, columns=columns)
+        st.dataframe(df)
+    else:
+        st.info("No demo requests yet")
+
+    delete_id = st.number_input("Delete request ID", step=1)
+
+    if st.button("Delete Request"):
+        cursor.execute("DELETE FROM demo_requests WHERE id=?", (delete_id,))
+        conn.commit()
+        st.success("Deleted")
+        st.rerun()
 #--------------------------------------------------------------------------
 ## Add edit form
 if "edit_lead" in st.session_state:
