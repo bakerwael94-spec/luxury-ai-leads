@@ -800,6 +800,32 @@ if page == "Admin":
     else:
         st.info("No demo requests yet")
 
+    st.divider()
+    st.subheader("📈 Platform Analytics")  ## Add Analytics to Admin Panel
+    cursor.execute("SELECT COUNT(*) FROM users")
+    total_users = cursor.fetchone()[0]
+    cursor.execute("SELECT COUNT(*) FROM leads")
+    total_leads = cursor.fetchone()[0]
+    cursor.execute("""
+    SELECT user, COUNT(*) as total
+    FROM leads
+    GROUP BY user
+    ORDER BY total DESC
+    """)
+
+    usage = cursor.fetchall()
+
+    col1, col2 = st.columns(2)
+
+    col1.metric("Total Users", total_users)
+    col2.metric("Total Leads", total_leads)
+
+    if usage:
+        df = pd.DataFrame(usage, columns=["User", "Leads"])
+        st.dataframe(df)
+
+
+
     delete_id = st.number_input("Delete request ID", step=1)
 
     if st.button("Delete Request"):
