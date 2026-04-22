@@ -178,7 +178,11 @@ def send_upgrade_email(user):
 # Free users → 5 leads/day
 # Later → Pro unlimited
 FREE_LIMIT = 5
-
+PLAN_LIMITS = {
+    "free": 5,
+    "pro": 999999,
+    "trial": 999999
+}
 #--------------------------------------------------------------------------
 # 🔐 Login
 # Username
@@ -394,12 +398,22 @@ if st.button("Analyze Lead"):
         lead for lead in st.session_state.leads
         if lead["user"] == st.session_state.user   
     ]
-   
+    user_plan = st.session_state.plan
+    limit = PLAN_LIMITS.get(user_plan, 5)
+
+    if len(user_leads) >= limit:
+        st.warning("You reached your plan limit. Upgrade to Pro.")
+        st.stop()
+
+    remaining = limit - len(user_leads)
+
+    if user_plan == "free":
+        st.info(f"Free plan: {remaining} leads remaining")
 
     # Block When Limit Reached
-    if st.session_state.plan == "free" and len(user_leads) >= FREE_LIMIT:
-        st.warning("Free plan limit reached. Upgrade to Pro.")
-        st.stop()
+    #if st.session_state.plan == "free" and len(user_leads) >= FREE_LIMIT:
+        #st.warning("Free plan limit reached. Upgrade to Pro.")
+        #st.stop()
     # 🔹 Scoring
     score = 0
 
