@@ -953,10 +953,16 @@ if page == "Leads":
                 today = datetime.date.today()
 
                 if lead.get("follow_up_date") and lead.get("follow_up_status") != "Done":
-                    follow_date = datetime.datetime.strptime(lead["follow_up_date"], "%Y-%m-%d").date()
+                    try:
+                        follow_date = datetime.datetime.strptime(
+                            str(lead["follow_up_date"]).split(" ")[0],
+                            "%Y-%m-%d"
+                        ).date()
+                        if follow_date < today:
+                            st.error("⚠️ Follow-up overdue")
 
-                    if follow_date < today:
-                        st.error("⚠️ Follow-up overdue")
+                    except:
+                        pass  # skip bad date values
                 st.progress(lead["probability"] / 100) # progress bar
 
             # EDIT BUTTON
