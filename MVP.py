@@ -52,8 +52,14 @@ import hashlib # Import hashlib   # ✔
 import random  # ✔
 import sqlite3  # ✔
 #--------------------------------------------------------------------------
-
-
+def safe_float(value):
+    try:
+        if isinstance(value, str):
+            value = value.replace("AED", "").replace(",", "").strip()
+        return float(value)
+    except:
+        return 0
+#--------------------------------------------------------------------------
 st.sidebar.image("logo.png", width=150)  # ✔
 st.sidebar.title("Luxury AI")  # ✔
 st.sidebar.caption("Real Estate Lead Intelligence")  # ✔
@@ -731,13 +737,7 @@ if page == "Dashboard":
         # Load leads
         leads = st.session_state.leads
 
-        def safe_float(value):
-            try:
-                if isinstance(value, str):
-                    value = value.replace("AED", "").replace(",", "").strip()
-                return float(value)
-            except:
-                return 0
+        
 
         # Total pipeline value
         total_value = sum(safe_float(l.get("property_value")) for l in leads)
