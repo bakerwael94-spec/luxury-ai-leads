@@ -940,8 +940,8 @@ if page == "Leads":
 
                 **Stage:** {lead['stage']}
 
-                **Property Value:** AED {lead['property_value']:,.0f}  
-                **Expected Commission:** AED {lead['expected_commission']:,.0f}
+                **Property Value:** AED {safe_float(lead.get('property_value')):,.0f}  
+                **Expected Commission:** AED {safe_float(lead.get('expected_commission')):,.0f}
 
 
                 **Close Probability:** {lead['probability']}%
