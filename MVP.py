@@ -798,7 +798,7 @@ if page == "Dashboard":
             if lead.get("follow_up_date") and lead.get("follow_up_status") != "Done":
                 try:
                     follow_date = datetime.datetime.strptime(
-                        str(lead["follow_up_date"]),
+                        str(lead["follow_up_date"]).split(" ")[0],
                         "%Y-%m-%d"
                     ).date()
                 except:
