@@ -161,7 +161,7 @@ cursor.execute("""
 CREATE TABLE IF NOT EXISTS users (
     username TEXT PRIMARY KEY,
     password TEXT,
-    plan TEXT,
+    plan TEXT
 
 )
 """)
