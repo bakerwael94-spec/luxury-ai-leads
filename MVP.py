@@ -168,6 +168,11 @@ CREATE TABLE IF NOT EXISTS users (
 """)
 # Add monthly usage columns if they do not exist
 try:
+    cursor.execute("ALTER TABLE users ADD COLUMN email TEXT")
+except:
+    pass
+
+try:
     cursor.execute("ALTER TABLE users ADD COLUMN usage_month TEXT")
 except:
     pass
