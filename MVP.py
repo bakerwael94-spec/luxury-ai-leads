@@ -630,7 +630,7 @@ if st.button("Analyze Lead"):
         commission_rate,
         expected_commission,
         ai_strategy,
-        str(follow_up_date),
+        follow_up_date.strftime("%Y-%m-%d"),
         "Pending"
     ))
 
@@ -796,7 +796,14 @@ if page == "Dashboard":
 
         for lead in st.session_state.leads:
             if lead.get("follow_up_date") and lead.get("follow_up_status") != "Done":
-                follow_date = datetime.datetime.strptime(lead["follow_up_date"], "%Y-%m-%d").date()
+                try:
+                    follow_date = datetime.datetime.strptime(
+                        str(lead["follow_up_date"]),
+                        "%Y-%m-%d"
+                    ).date()
+                except:
+                    continue  # skip bad/empty dates
+    
 
                 pending_followups.append({
                     "Name": lead["name"],
