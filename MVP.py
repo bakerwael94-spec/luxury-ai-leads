@@ -40,62 +40,62 @@
 # Month 6+: Raise price
 #--------------------------------------------------------------------------
 # Import
-from openai import OpenAI
-import streamlit as st # Import library as stremlit app
-import pandas as pd   ## This imports Pandas library for working with tables / CSV / Excel / data .... read/write CSV
-import os
-import datetime
+from openai import OpenAI  # ✔
+import streamlit as st # Import library as stremlit app  # ✔
+import pandas as pd   ## This imports Pandas library for working with tables / CSV / Excel / data .... read/write CSV  # ✔
+import os  # ✔
+import datetime  # ✔
 # Add email function
-import smtplib
-from email.mime.text import MIMEText
-import hashlib # Import hashlib 
-import random
-import sqlite3
+import smtplib  # ✔
+from email.mime.text import MIMEText  # ✔
+import hashlib # Import hashlib   # ✔
+import random  # ✔
+import sqlite3  # ✔
 #--------------------------------------------------------------------------
 
 
-st.sidebar.image("logo.png", width=150)
-st.sidebar.title("Luxury AI")
-st.sidebar.caption("Real Estate Lead Intelligence")
+st.sidebar.image("logo.png", width=150)  # ✔
+st.sidebar.title("Luxury AI")  # ✔
+st.sidebar.caption("Real Estate Lead Intelligence")  # ✔
 
 #Add Sidebar Title
-st.sidebar.title("🏡 Luxury AI")
-st.sidebar.markdown("---")
-st.sidebar.caption("Lead Intelligence Platform")
+st.sidebar.title("🏡 Luxury AI")  # ✔
+st.sidebar.markdown("---")  # ✔
+st.sidebar.caption("Lead Intelligence Platform")  # ✔
 #--------------------------------------------------------------------------
-st.set_page_config(
-    page_title="Luxury AI",
-    page_icon="🏡",
-    layout="wide"
+st.set_page_config(  # ✔
+    page_title="Luxury AI",  # ✔
+    page_icon="🏡",  # ✔
+    layout="wide"  # ✔
 )
 #--------------------------------------------------------------------------
 # Create Hash Function
-def hash_password(password):
-    return hashlib.sha256(password.encode()).hexdigest()
+def hash_password(password):  # ✔
+    return hashlib.sha256(password.encode()).hexdigest()  # ✔
 #--------------------------------------------------------------------------
 # Create send function 
 # This function sends a password reset email with a verification code to the user 📧🔐
-def send_reset_email(to_email, code):
-    msg = MIMEText(f"Your password reset code is: {code}")
-    msg["Subject"] = "Password Reset Code"
-    msg["From"] = "bakerwael94@gmail.com"
-    msg["To"] = to_email
+def send_reset_email(to_email, code): # ✔
+    msg = MIMEText(f"Your password reset code is: {code}")  # ✔
+    msg["Subject"] = "Password Reset Code"  # ✔
+    msg["From"] = "bakerwael94@gmail.com"  # ✔
+    msg["To"] = to_email  # ✔
 
-    server = smtplib.SMTP("smtp.gmail.com", 587)
-    server.starttls()
-    server.login("bakerwael94@gmail.com", "ctytmfqcquuncuas")
-    server.send_message(msg)
-    server.quit()
+    server = smtplib.SMTP("smtp.gmail.com", 587)  # ✔
+    server.starttls()  # ✔
+    server.login("bakerwael94@gmail.com", "ctytmfqcquuncuas")  # ✔
+    server.send_message(msg)  # ✔
+    server.quit()  # ✔
 #--------------------------------------------------------------------------   
 # Create database
 # We upgrade to a real database (SQLite — simple & powerful)
 # conn = connection to database 🔌
 # cursor = tool to run SQL commands 🛠️
-conn = sqlite3.connect("leads.db", check_same_thread=False)
-cursor = conn.cursor()
+conn = sqlite3.connect("leads.db", check_same_thread=False)  # ✔
+cursor = conn.cursor()  # ✔
 
-cursor.execute("""
-CREATE TABLE IF NOT EXISTS leads (
+cursor.execute("""  
+CREATE TABLE IF NOT EXISTS leads ( 
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT,
     score INTEGER,
@@ -104,11 +104,57 @@ CREATE TABLE IF NOT EXISTS leads (
     probability INTEGER,
     area TEXT,
     message TEXT,
-    user TEXT
+    user TEXT,
+    date TEXT
 )
 """)
+# Add pipeline/revenue columns if they do not exist
+try:
+    cursor.execute("ALTER TABLE leads ADD COLUMN stage TEXT")
+except:
+    pass
 
-conn.commit() # save changes to the database permanently 💾
+try:
+    cursor.execute("ALTER TABLE leads ADD COLUMN property_value REAL")
+except:
+    pass
+
+try:
+    cursor.execute("ALTER TABLE leads ADD COLUMN commission_rate REAL")
+except:
+    pass
+
+try:
+    cursor.execute("ALTER TABLE leads ADD COLUMN expected_commission REAL")
+except:
+    pass
+
+
+try:
+    cursor.execute("ALTER TABLE leads ADD COLUMN ai_strategy TEXT")
+except:
+    pass
+
+
+try:
+    cursor.execute("ALTER TABLE leads ADD COLUMN follow_up_date TEXT")
+except:
+    pass
+
+
+try:
+    cursor.execute("ALTER TABLE leads ADD COLUMN follow_up_status TEXT")
+except:
+    pass
+
+
+try:
+    cursor.execute("ALTER TABLE leads ADD COLUMN followup_message TEXT")
+except:
+    pass
+
+conn.commit() # save changes to the database permanently 💾  # ✔
+
 #--------------------------------------------------------------------------
 # Create users table
 cursor.execute("""
@@ -116,11 +162,21 @@ CREATE TABLE IF NOT EXISTS users (
     username TEXT PRIMARY KEY,
     password TEXT,
     plan TEXT,
-    email TEXT
+
 )
 """)
+# Add monthly usage columns if they do not exist
+try:
+    cursor.execute("ALTER TABLE users ADD COLUMN usage_month TEXT")
+except:
+    pass
 
-conn.commit()
+try:
+    cursor.execute("ALTER TABLE users ADD COLUMN monthly_leads INTEGER DEFAULT 0")
+except:
+    pass
+
+conn.commit()  # ✔
 #--------------------------------------------------------------------------  
 # Save Requests (Database)
 cursor.execute("""
@@ -133,56 +189,59 @@ CREATE TABLE IF NOT EXISTS demo_requests (
 )
 """)
 
-conn.commit()
+conn.commit()  # ✔
 #--------------------------------------------------------------------------
 # Save leads permanently (so they don’t disappear when app refreshes)
 # simple CSV database (fastest + reliable).
 
-DB_FILE = "leads_db.csv" # create database file
+DB_FILE = "leads_db.csv" # create database file  # ✔
 #--------------------------------------------------------------------------
 # Reset code storage
-if "reset_code" not in st.session_state:
-    st.session_state.reset_code = None
+if "reset_code" not in st.session_state:  # ✔
+    st.session_state.reset_code = None  # ✔
 #--------------------------------------------------------------------------
 ## Step 1 — Track App Usage
 
 # We count: total logins, leads created and active users
 
-if "stats" not in st.session_state:  # initialization
-    st.session_state.stats = {
-        "logins": 0,
-        "leads_created": 0
-    }
+if "stats" not in st.session_state:  # initialization  # ✔
+    st.session_state.stats = {  # ✔
+        "logins": 0,  # ✔
+        "leads_created": 0  # ✔
+    }  # ✔
 #--------------------------------------------------------------------------
 # Create send function
-def send_upgrade_email(user):
-    try:
-        msg = MIMEText(f"User '{user}' requested Pro upgrade.")
-        msg["Subject"] = "Upgrade Request"
-        msg["From"] = "bakerwael94@gmail.com"
-        msg["To"] = "bakerwael94@gmail.com"
+def send_upgrade_email(user): # ✔
+    try:  # ✔
+        msg = MIMEText(f"User '{user}' requested Pro upgrade.")  # ✔
+        msg["Subject"] = "Upgrade Request"  # ✔
+        msg["From"] = "bakerwael94@gmail.com"  # ✔
+        msg["To"] = "bakerwael94@gmail.com"  # ✔
 
-        server = smtplib.SMTP("smtp.gmail.com", 587)
-        server.starttls()
-        server.ehlo()
-        server.login("bakerwael94@gmail.com", "ctytmfqcquuncuas")
-        server.send_message(msg)
-        server.quit()
+        server = smtplib.SMTP("smtp.gmail.com", 587)  # ✔
+        server.starttls()  # ✔
+        server.ehlo()  # ✔
+        server.login("bakerwael94@gmail.com", "ctytmfqcquuncuas")  # ✔
+        server.send_message(msg)  # ✔
+        server.quit()  # ✔
 
-        print("EMAIL SENT")
+        print("EMAIL SENT")  # ✔
 
-    except Exception as e:
-        print("ERROR:", e)
+    except Exception as e:  # ✔
+        print("ERROR:", e)  # ✔
 #--------------------------------------------------------------------------
 # Add Free Limit
 # Free users → 5 leads/day
 # Later → Pro unlimited
-FREE_LIMIT = 5
-PLAN_LIMITS = {
-    "free": 5,
-    "pro": 999999,
-    "trial": 999999
+# FREE_LIMIT = 5
+PLAN_LIMITS = {  # ✔
+    "free": 5,  # ✔
+    "pro": 999999,  # ✔
+    "trial": 999999  # ✔
 }
+# Admin:
+# Plan = PRO → unlimited forever
+TRIAL_DAYS = 7  # ✔
 #--------------------------------------------------------------------------
 # 🔐 Login
 # Username
@@ -197,76 +256,105 @@ PLAN_LIMITS = {
     #"agent": "1234"
 #}
 # Add User Plans
-USER_PLANS = {
-    "admin": "pro",
-    "agent": "free"
-}
-# Create Login State
-if "logged_in" not in st.session_state:
-    st.session_state.logged_in = False
+# USER_PLANS = {
+    # "admin": "pro",
+    # "agent": "free"
+# }
 
-# initialize trial / This code stores the start date of a trial in Streamlit session state 📅
-if "trial_start" not in st.session_state:
-    st.session_state.trial_start = datetime.date.today()
+# Create Login State
+if "logged_in" not in st.session_state:  # ✔
+    st.session_state.logged_in = False  # ✔
 
 # Login Screen
-if not st.session_state.logged_in:
+if not st.session_state.logged_in:  # ✔
 
-    auth_mode = st.radio("Select", ["Login", "Sign Up", "Forgot Password"])
+    auth_mode = st.radio("Select", ["Login", "Sign Up", "Forgot Password"])  # ✔
 
-    if auth_mode == "Sign Up":
+    if auth_mode == "Sign Up":  # ✔
 
-        st.subheader("Create Account")
+        st.subheader("Create Account")  # ✔
 
-        new_user = st.text_input("Username")
-        new_pass = st.text_input("Password", type="password")
-        email = st.text_input("Email")
+        new_user = st.text_input("Username")  # ✔
+        new_pass = st.text_input("Password", type="password")  # ✔
+        email = st.text_input("Email") # ✔
 
-        if st.button("Create Account"):
+        if st.button("Create Account"):  # ✔
 
-            cursor.execute(
-                "SELECT * FROM users WHERE username=?",
-                (new_user,)
+            cursor.execute(  # ✔
+                "SELECT * FROM users WHERE username=?",  # ✔
+                (new_user,)  # ✔
             )
             # cursor.execute(...) → search database
             # fetchone() → get first result
             # existing → store result
-            existing = cursor.fetchone()
+            existing = cursor.fetchone()  # ✔
 
-            if existing:
-                st.error("User already exists")
-            else:
-                cursor.execute(
-                    "INSERT INTO users (username, password, plan, email) VALUES (?, ?, ?, ?)",
-                    (new_user, hash_password(new_pass), "free", email) # Hash Password on Signup
+            if existing:  # ✔
+                st.error("User already exists")  # ✔
+            else:  # ✔
+                cursor.execute(  # ✔
+                    "INSERT INTO users (username, password, plan, email) VALUES (?, ?, ?, ?)",  # ✔
+                    (new_user, hash_password(new_pass), "free", email) # Hash Password on Signup  # ✔
                 )
 
-                conn.commit()
+                conn.commit()  # ✔
 
-                st.success("Account created. You can login now.")
+                st.success("Account created. You can login now.")  # ✔
     
 
-    if auth_mode == "Login":
+    if auth_mode == "Login":  # ✔
 
-        username = st.text_input("Username")
-        password = st.text_input("Password", type="password")
+        username = st.text_input("Username")  # ✔
+        password = st.text_input("Password", type="password")  # ✔
 
-        if st.button("Login"):
+        if st.button("Login"):  # ✔
 
-            cursor.execute(
-                "SELECT * FROM users WHERE username=? AND password=?",
-                (username, hash_password(password)) # Hash Password on Login
+            cursor.execute(  # ✔
+                "SELECT * FROM users WHERE username=? AND password=?",  # ✔
+                (username, hash_password(password)) # Hash Password on Login  # ✔
             )
 
-            user = cursor.fetchone()
+            user = cursor.fetchone()  # ✔
 
-            if user:
-                st.session_state.logged_in = True
-                st.session_state.user = user[0]
-                st.session_state.plan = user[2]
-                st.rerun()
-            else:
-                st.error("Invalid username or password")
+            if user:  # ✔
+                st.session_state.logged_in = True  # ✔
+                st.session_state.user = user[0]  # ✔
+                st.session_state.plan = user[2]  # ✔
+              # initialize trial / This code stores the start date of a trial in Streamlit session state 📅
+
+                if "trial_start" not in st.session_state:  # ✔
+                    st.session_state.trial_start = datetime.date.today()  # ✔
+                   ## # Calculate Trial Days
+                today = datetime.date.today()  # ✔
+                trial_days_used = (today - st.session_state.trial_start).days  # ✔
+                   ## # Give trial access
+                if st.session_state.plan == "free" and trial_days_used < TRIAL_DAYS:  # ✔
+                    st.session_state.plan = "trial"  # ✔
+
+                # -------- Monthly Reset Logic --------
+                current_month = today.strftime("%Y-%m")
+
+                cursor.execute(
+                    "SELECT usage_month, monthly_leads FROM users WHERE username=?",
+                    (st.session_state.user,)
+                )
+
+                usage_data = cursor.fetchone()
+
+                if usage_data:
+                    usage_month, monthly_leads = usage_data
+
+                if usage_month != current_month:
+                    cursor.execute(
+                        "UPDATE users SET usage_month=?, monthly_leads=? WHERE username=?",
+                        (current_month, 0, st.session_state.user)
+                    )
+                    conn.commit()
+    # ------------------------------------
+
+                st.rerun()  # ✔
+            else:  # ✔
+                st.error("Invalid username or password")  # ✔
      
     if auth_mode == "Forgot Password": # Forgot Password (Email)
 
@@ -321,16 +409,6 @@ if not st.session_state.logged_in:
 # Plan = TRIAL → unlimited
 # After 7 days:
 # Plan = FREE → limited
-
-# Admin:
-# Plan = PRO → unlimited forever
-TRIAL_DAYS = 7
-# Calculate Trial Days
-today = datetime.date.today()
-trial_days_used = (today - st.session_state.trial_start).days
-# Give trial access 
-if st.session_state.plan == "free" and trial_days_used < TRIAL_DAYS:
-    st.session_state.plan = "trial"
 #--------------------------------------------------------------------------
 ## Load Existing Leads on App Start
 #if "leads" not in st.session_state:
@@ -351,17 +429,14 @@ def load_leads():
     cursor.execute("SELECT * FROM leads")
     rows = cursor.fetchall()
 
-    columns = ["id","name","score","quality","type","probability","area","message","user"]
+    columns = [
+        "id", "name", "score", "quality", "type", "probability",
+        "area", "message", "user", "stage", "property_value",
+        "commission_rate", "expected_commission", "ai_strategy", "follow_up_date", "follow_up_status", "followup_message"
+    ]
 
     return [dict(zip(columns, row)) for row in rows]
 
-## Upgrade User to Pro When payment succeeds:
-cursor.execute(
-    "UPDATE users SET plan='pro' WHERE username=?",
-    (st.session_state.user,)
-)
-
-conn.commit()
 #--------------------------------------------------------------------------        
 # 🔐 OpenAI client
 
@@ -383,32 +458,47 @@ budget = st.number_input("Budget (AED)", value=1000000)
 area = st.text_input("Preferred Area")
 timeline = st.selectbox("Timeline", ["1 month", "3 months", "6 months"])
 message = st.text_area("Client Message")
+follow_up_date = st.date_input("Next Follow-Up Date")
 #--------------------------------------------------------------------------
-## Show Limit Warning in Main UI
-if st.session_state.plan == "free":
-    st.info(f"Free Plan: {FREE_LIMIT} leads limit")
-#--------------------------------------------------------------------------
+stage = st.selectbox(
+    "Pipeline Stage",
+    ["New Lead", "Contacted", "Viewing Scheduled", "Negotiation", "Closed Won", "Closed Lost"]
+)
 
+property_value = st.number_input("Property Value (AED)", min_value=0, value=8000000)
+
+commission_rate = st.number_input("Commission Rate (%)", min_value=0.0, value=2.0)
+
+expected_commission = property_value * commission_rate / 100
+#--------------------------------------------------------------------------
 # 🚀 Analyze Button
 
 if st.button("Analyze Lead"):
 
     # Count User Leads
-    user_leads = [
-        lead for lead in st.session_state.leads
-        if lead["user"] == st.session_state.user   
-    ]
+    #user_leads = [
+        #lead for lead in st.session_state.leads
+        #if lead["user"] == st.session_state.user   
+    #]
     user_plan = st.session_state.plan
     limit = PLAN_LIMITS.get(user_plan, 5)
 
-    if len(user_leads) >= limit:
-        st.warning("You reached your plan limit. Upgrade to Pro.")
+    cursor.execute(
+        "SELECT monthly_leads FROM users WHERE username=?",
+        (st.session_state.user,)
+    )
+
+    monthly_leads = cursor.fetchone()[0] or 0
+
+    if monthly_leads >= limit:
+        st.warning("Monthly limit reached. Upgrade to Pro.")
         st.stop()
 
-    remaining = limit - len(user_leads)
+    remaining = limit - monthly_leads
 
     if user_plan == "free":
-        st.info(f"Free plan: {remaining} leads remaining")
+        st.info(f"Monthly free leads remaining: {remaining}")
+
 
     # Block When Limit Reached
     #if st.session_state.plan == "free" and len(user_leads) >= FREE_LIMIT:
@@ -472,14 +562,54 @@ if st.button("Analyze Lead"):
 
     ai_message = response.choices[0].message.content
 
+    strategy_prompt = f"""
+    You are a senior luxury real estate sales strategist in Dubai.
+
+    Lead details:
+    Name: {name}
+    Area: {area}
+    Budget: {budget}
+    Timeline: {timeline}
+    Lead type: {lead_type}
+    Lead quality: {quality}
+    Close probability: {probability}%
+    Pipeline stage: {stage}
+    Property value: AED {property_value}
+    Expected commission: AED {expected_commission}
+
+    Give a short deal strategy with:
+    1. Next best action
+    2. Negotiation strategy
+    3. When to push or wait
+    4. Main risk
+    """
+
+    strategy_response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {"role": "user", "content": strategy_prompt}
+        ]
+    )
+
+    ai_strategy = strategy_response.choices[0].message.content
+
+
+
     # 💬 Show AI message
     st.write("### AI Suggested Message:")
     st.success(ai_message)
+  
+    with st.expander("📊 View AI Strategy"):
+        st.write(ai_strategy)
+
 
     # 💾 Save lead
     cursor.execute("""
-    INSERT INTO leads (name, score, quality, type, probability, area, message, user)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO leads (
+        name, score, quality, type, probability, area, message, user,
+        stage, property_value, commission_rate, expected_commission, ai_strategy, follow_up_date, follow_up_status
+    )
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, (
         name,
         score,
@@ -488,11 +618,25 @@ if st.button("Analyze Lead"):
         probability,
         area,
         ai_message,
-        st.session_state.user ## Save User With Each Lead
+        st.session_state.user,
+        stage,
+        property_value,
+        commission_rate,
+        expected_commission,
+        ai_strategy,
+        str(follow_up_date),
+        "Pending"
     ))
-    st.session_state.stats["leads_created"] += 1 ## Count Leads
-    conn.commit()
 
+    st.session_state.stats["leads_created"] += 1 ## Count Leads
+
+    # Increase monthly usage after lead is saved
+    cursor.execute(
+        "UPDATE users SET monthly_leads = monthly_leads + 1 WHERE username=?",
+        (st.session_state.user,)
+    )
+
+    conn.commit()
     st.session_state.leads = load_leads()
 
     #pd.DataFrame(st.session_state.leads).to_csv(DB_FILE, index=False) # Save Leads to Database
@@ -506,29 +650,37 @@ page = st.sidebar.radio(
     ["Home","Dashboard", "Leads", "Analytics", "Pricing", "Admin"]
 )
 # 
+PRO_LINK = "https://buy.stripe.com/test_8x24gy95I9s5duR1Qz8AE00"
+
 st.sidebar.markdown("---")
 # Show User in Sidebar
 st.sidebar.write(f"👤 {st.session_state.user}") 
 # Show Plan in Sidebar
 st.sidebar.write(f"Plan: {st.session_state.plan.upper()}")
-## Show Upgrade Message for Free Users
+## Sidebar (Plan + Upgrade UI)
 if st.session_state.plan == "free":
     st.sidebar.warning("Free Plan limited to 5 leads")
+    st.sidebar.link_button("🚀 Upgrade to Pro", PRO_LINK)
 
-## Add Upgrade Button
-#if st.session_state.plan == "free":
-    #if st.sidebar.button("🚀 Upgrade to Pro"):
-        #st.sidebar.info("Contact admin to upgrade your account")
+if st.session_state.plan == "trial":
+    today = datetime.date.today()
+    trial_days_used = (today - st.session_state.trial_start).days
+    remaining = max(0, TRIAL_DAYS - trial_days_used)
 
-#if st.sidebar.button("🚀 Upgrade to Pro"):
-    #send_upgrade_email(st.session_state.user)
-    #st.sidebar.success("Upgrade request sent")
+    st.sidebar.success(f"Trial: {remaining} days left")
+## usage display in sidebar
+cursor.execute(
+    "SELECT monthly_leads FROM users WHERE username=?",
+    (st.session_state.user,)
+)
+monthly_leads = cursor.fetchone()[0] or 0
 
-PRO_LINK = "https://buy.stripe.com/test_8x24gy95I9s5duR1Qz8AE00"
+limit = PLAN_LIMITS.get(st.session_state.plan, 5)
 
-#if st.sidebar.button("🚀 Upgrade to Pro"):
-    #st.markdown(f"[Click here to upgrade]({PRO_LINK})")
-st.sidebar.link_button("🚀 Upgrade to Pro", PRO_LINK)
+st.sidebar.write(f"Usage: {monthly_leads}/{limit}")
+
+
+
 
 # Add Logout Button in Sidebar
 if st.sidebar.button("🚪 Logout"):
@@ -537,10 +689,6 @@ if st.sidebar.button("🚪 Logout"):
 # Add demo user logo
 st.sidebar.markdown("---")
 st.sidebar.write("👤 Demo User")
-# Show Trial Banner
-if st.session_state.plan == "trial":
-    remaining = TRIAL_DAYS - trial_days_used
-    st.sidebar.success(f"Trial Active: {remaining} days left")
 #--------------------------------------------------------------------------
 # Show history (MUST be OUTSIDE button)
 ## add a button under each lead so the user can quickly copy the AI message. 
@@ -570,10 +718,108 @@ if page == "Dashboard":
         col1.metric("Total Logins", st.session_state.stats["logins"])
         col2.metric("Leads Created", st.session_state.stats["leads_created"])
 
-    st.divider()
+    
+        st.divider()
+        st.subheader("💰 Pipeline & Revenue")
+
+        # Load leads
+        leads = st.session_state.leads
+
+        # Total pipeline value
+        total_value = sum(l.get("property_value", 0) for l in leads)
+
+        # Expected commission
+        total_commission = sum(l.get("expected_commission", 0) for l in leads)
+
+        # Closed deals
+        closed_deals = [l for l in leads if l.get("stage") == "Closed Won"]
+        closed_revenue = sum(l.get("expected_commission", 0) for l in closed_deals)
+
+        col1, col2, col3 = st.columns(3)
+
+        col1.metric("Total Pipeline Value", f"AED {total_value:,.0f}")
+        col2.metric("Expected Commission", f"AED {total_commission:,.0f}")
+        col3.metric("Closed Revenue", f"AED {closed_revenue:,.0f}")
+
+        st.divider()
+        st.subheader("📊 Pipeline Overview")
+
+        pipeline_stages = [
+            "New Lead",
+            "Contacted",
+            "Viewing Scheduled",
+            "Negotiation",
+            "Closed Won",
+            "Closed Lost"
+        ]
+
+        stage_counts = {
+            stage: sum(1 for l in st.session_state.leads if l.get("stage") == stage)
+            for stage in pipeline_stages
+        }
+
+        cols = st.columns(len(pipeline_stages))
+
+        for col, stage in zip(cols, pipeline_stages):
+            col.metric(stage, stage_counts[stage])
+
+        pipeline_df = pd.DataFrame({
+        "Stage": list(stage_counts.keys()),
+        "Count": list(stage_counts.values())
+        })
+
+        st.bar_chart(
+            pipeline_df.set_index("Stage")
+        )
+
+        st.divider()
+        st.subheader("⏰ Follow-Up Reminders")
+
+        today = datetime.date.today()
+
+        pending_followups = []
+
+        for lead in st.session_state.leads:
+            if lead.get("follow_up_date") and lead.get("follow_up_status") != "Done":
+                follow_date = datetime.datetime.strptime(lead["follow_up_date"], "%Y-%m-%d").date()
+
+                pending_followups.append({
+                    "Name": lead["name"],
+                    "Area": lead["area"],
+                    "Stage": lead["stage"],
+                    "Follow-Up Date": lead["follow_up_date"],
+                    "Status": "Overdue" if follow_date < today else "Pending"
+                })
+
+        if pending_followups:
+            df_followups = pd.DataFrame(pending_followups)
+            st.dataframe(df_followups)
+        else:
+            st.success("No pending follow-ups 🎉")
 
 # Lead History 
 if page == "Leads":
+
+  
+    # Leads page: show only
+    limit = PLAN_LIMITS.get(st.session_state.plan, 5)
+
+    cursor.execute(
+        "SELECT monthly_leads FROM users WHERE username=?",
+        (st.session_state.user,)
+    )
+
+    monthly_leads = cursor.fetchone()[0] or 0
+    remaining = max(0, limit - monthly_leads)
+
+    if st.session_state.plan == "free":
+        st.info(f"Free Plan: {remaining} leads remaining this month")
+
+        st.info(f"Usage: {monthly_leads}/{limit}")
+        progress = monthly_leads / limit if limit > 0 else 0
+        st.progress(progress)
+
+
     st.title("📋 Leads")
 
     # Clear history
@@ -670,8 +916,26 @@ if page == "Leads":
                 
                 **Area:** {lead['area']}
 
+                **Stage:** {lead['stage']}
+
+                **Property Value:** AED {lead['property_value']:,.0f}  
+                **Expected Commission:** AED {lead['expected_commission']:,.0f}
+
+
                 **Close Probability:** {lead['probability']}%
+
+                **Next Follow-Up:** {lead['follow_up_date']}
+
+                **Follow-Up Status:** {lead['follow_up_status']}
                 """)
+                today = datetime.date.today()
+
+                if lead.get("follow_up_date") and lead.get("follow_up_status") != "Done":
+                    follow_date = datetime.datetime.strptime(lead["follow_up_date"], "%Y-%m-%d").date()
+
+                    if follow_date < today:
+                        st.error("⚠️ Follow-up overdue")
+                st.progress(lead["probability"] / 100) # progress bar
 
             # EDIT BUTTON
             with col2:
@@ -691,10 +955,71 @@ if page == "Leads":
                     st.session_state.leads = load_leads()
                     st.rerun()
 
-            st.progress(lead["probability"] / 100) # progress bar
+            
 
             st.info(lead["message"])
             st.code(lead["message"])
+            if lead.get("ai_strategy"):
+                st.write("### 🧠 AI Deal Strategy")
+                st.warning(lead["ai_strategy"])
+
+            if lead.get("followup_message"):
+                st.write("### 📲 Saved Follow-Up Message")
+                st.success(lead["followup_message"])
+                st.code(lead["followup_message"])
+
+            if st.button("🤖 Generate Follow-Up Message", key=f"followup_{lead['id']}"):
+
+                followup_prompt = f"""
+                You are a luxury real estate broker in Dubai.
+
+                Lead:
+                Name: {lead['name']}
+                Area: {lead['area']}
+                Stage: {lead['stage']}
+                Type: {lead['type']}
+                Quality: {lead['quality']}
+                Close Probability: {lead['probability']}%
+                Follow-Up Date: {lead['follow_up_date']}
+                Follow-Up Status: {lead['follow_up_status']}
+
+                Write a short WhatsApp follow-up message.
+                Make it premium, natural, and not pushy.
+                If the follow-up is overdue, gently create urgency.
+                """
+
+                followup_response = client.chat.completions.create(
+                    model="gpt-4o-mini",
+                    messages=[
+                        {"role": "user", "content": followup_prompt}
+                    ]
+                )
+
+                followup_message = followup_response.choices[0].message.content
+
+                cursor.execute(
+                    "UPDATE leads SET followup_message=? WHERE id=?",
+                    (followup_message, lead["id"])
+                )
+
+                conn.commit()
+
+                st.session_state.leads = load_leads()
+
+                st.write("### 📲 Follow-Up Message")
+                st.success(followup_message)
+                st.code(followup_message)
+                  # existing button (mark done)
+            if lead.get("follow_up_status") != "Done":
+                if st.button("✅ Mark Follow-Up Done", key=f"done_{lead['id']}"):
+                    cursor.execute(
+                        "UPDATE leads SET follow_up_status=? WHERE id=?",
+                        ("Done", lead["id"])
+                    )
+                    conn.commit()
+
+                    st.session_state.leads = load_leads()
+                    st.rerun()
             st.divider()
 
 ## Add analytics 
@@ -798,6 +1123,35 @@ if page == "Home":
 
         st.success("Request received. We will contact you.")
 
+    st.divider()
+    st.subheader("💬 What Our Users Say")
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.info("""
+        ⭐⭐⭐⭐⭐  
+        "This tool helped me identify serious buyers instantly.  
+        I closed 2 deals in one week."  
+        — Ahmed, Dubai Broker
+        """)
+
+    with col2:
+        st.info("""
+        ⭐⭐⭐⭐⭐  
+        "The AI follow-up messages are amazing.  
+        Saves me hours every day."  
+        — Sarah, Real Estate Agent
+        """)
+
+    st.divider()
+    st.subheader("🎥 Product Demo Coming Soon")
+
+    st.info("""
+    A short demo video will be added soon showing how Luxury AI analyzes leads,
+    predicts deal probability, and generates premium follow-up messages.
+    """)
+
 if page == "Admin":
 
     if st.session_state.user != "admin":
@@ -890,17 +1244,16 @@ if page == "Admin":
         st.success("User deleted")
         st.rerun()
 
-    upgrade_user = st.text_input("Upgrade Username") ## Upgrade User
+    upgrade_user = st.text_input("Upgrade Username")
 
     if st.button("Make Pro"):
         cursor.execute(
             "UPDATE users SET plan='pro' WHERE username=?",
             (upgrade_user,)
         )
-
         conn.commit()
 
-        st.success("User upgraded")
+        st.success("User upgraded to PRO")
 
 #--------------------------------------------------------------------------
 ## Add edit form
