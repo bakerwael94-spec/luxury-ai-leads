@@ -732,14 +732,14 @@ if page == "Dashboard":
         leads = st.session_state.leads
 
         # Total pipeline value
-        total_value = sum(l.get("property_value", 0) for l in leads)
+        total_value = sum(float(l.get("property_value") or 0) for l in leads)
 
         # Expected commission
-        total_commission = sum(l.get("expected_commission", 0) for l in leads)
+        total_commission = sum(float(l.get("expected_commission") or 0) for l in leads)
 
         # Closed deals
         closed_deals = [l for l in leads if l.get("stage") == "Closed Won"]
-        closed_revenue = sum(l.get("expected_commission", 0) for l in closed_deals)
+        closed_revenue = sum(float(l.get("expected_commission") or 0) for l in closed_deals)
 
         col1, col2, col3 = st.columns(3)
 
