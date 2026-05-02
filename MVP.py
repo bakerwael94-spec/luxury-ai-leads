@@ -60,14 +60,11 @@ def safe_float(value):
     except:
         return 0
 #--------------------------------------------------------------------------
+#Add Sidebar Title
 st.sidebar.image("logo.png", width=150)  # ✔
 st.sidebar.title("Luxury AI")  # ✔
-st.sidebar.caption("Real Estate Lead Intelligence")  # ✔
-
-#Add Sidebar Title
-st.sidebar.title("🏡 Luxury AI")  # ✔
 st.sidebar.markdown("---")  # ✔
-st.sidebar.caption("Lead Intelligence Platform")  # ✔
+st.sidebar.caption("Real Estate Lead Intelligence Platform")  # ✔
 #--------------------------------------------------------------------------
 st.set_page_config(  # ✔
     page_title="Luxury AI",  # ✔
