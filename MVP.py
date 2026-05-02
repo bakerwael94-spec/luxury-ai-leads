@@ -158,6 +158,12 @@ except:
 
 conn.commit() # save changes to the database permanently 💾  # ✔
 
+
+st.write("Database path:", os.path.abspath("leads.db"))
+
+cursor.execute("PRAGMA table_info(leads)")
+st.write(cursor.fetchall())
+
 #--------------------------------------------------------------------------
 # Create users table
 cursor.execute("""
