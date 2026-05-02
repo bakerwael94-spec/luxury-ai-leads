@@ -63,8 +63,8 @@ def safe_float(value):
 #Add Sidebar Title
 st.sidebar.image("logo.png", width=150)  # ✔
 st.sidebar.title("Luxury AI")  # ✔
-st.sidebar.markdown("---")  # ✔
 st.sidebar.caption("Real Estate Lead Intelligence Platform")  # ✔
+st.sidebar.markdown("---")  # ✔
 #--------------------------------------------------------------------------
 st.set_page_config(  # ✔
     page_title="Luxury AI",  # ✔
