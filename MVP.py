@@ -1184,6 +1184,33 @@ if page == "Admin":
         st.stop()
 
     st.title("📊 Admin Panel")
+
+    st.subheader("🗄️ Cloud Database Viewer")
+
+    table_name = st.selectbox(
+        "Select table",
+        ["users", "leads", "demo_requests"]
+    )
+
+    cursor.execute(f"SELECT * FROM {table_name}")
+    rows = cursor.fetchall()
+
+    columns = [description[0] for description in cursor.description]
+
+    if rows:
+        df_table = pd.DataFrame(rows, columns=columns)
+        st.dataframe(df_table, use_container_width=True)
+        st.write("Total rows:", len(df_table))
+    else:
+        st.info(f"No records found in {table_name}")
+
+    st.divider()
+
+
+
+
+
+
     st.subheader("Demo Requests")
 
     cursor.execute("SELECT * FROM demo_requests")
