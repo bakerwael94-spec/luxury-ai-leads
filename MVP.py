@@ -203,7 +203,7 @@ conn.commit()  # ✔
 # Save leads permanently (so they don’t disappear when app refreshes)
 # simple CSV database (fastest + reliable).
 
-DB_FILE = "leads_db.csv" # create database file  # ✔
+# DB_FILE = "leads_db.csv" # create database file  # ✔
 #--------------------------------------------------------------------------
 # Reset code storage
 if "reset_code" not in st.session_state:  # ✔
