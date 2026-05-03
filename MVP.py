@@ -483,8 +483,12 @@ def load_leads():
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"]) 
 #--------------------------------------------------------------------------
 # Head title
-st.title("🏡 Luxury AI Lead Intelligence Analyzer")
-st.caption("AI-powered luxury real estate lead scoring & follow-up")
+st.title("🏡 Luxury Real Estate AI Lead Intelligence Analyzer")
+st.caption("""
+Identify serious buyers, predict deal probability, and send high-converting follow-ups instantly.
+""")
+st.success("🚀 Start by creating your first lead in the Leads page")
+st.info("Takes 30 seconds. You’ll get AI scoring + follow-up instantly.")
 #--------------------------------------------------------------------------
 # 🧠 Initialize memory / store leads in memory (no database yet) / Store leads + history
 if "leads" not in st.session_state:  ## st.session_state: Streamlit memory (stores values between reruns)
@@ -1157,17 +1161,8 @@ if page == "Pricing":
 if page == "Home":
 
 
-    st.success("🚀 Start by creating your first lead in the Leads page")
-    st.info("Takes 30 seconds. You’ll get AI scoring + follow-up instantly.")
-
-    st.title("🏡 Close High-Value Real Estate Deals Faster with AI")
-
-    st.write("""
-    Identify serious buyers, predict deal probability, and send high-converting follow-ups instantly.
-    """)
-
-    st.subheader("AI-Powered Real Estate Lead Intelligence")
-
+    
+    
     
 
     st.divider()
