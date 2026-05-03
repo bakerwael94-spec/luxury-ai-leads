@@ -495,11 +495,22 @@ if "leads" not in st.session_state:  ## st.session_state: Streamlit memory (stor
     st.session_state.leads = load_leads()
 #--------------------------------------------------------------------------
 # 📝 Inputs
-name = st.text_input("Client Name")
+name = st.text_input("Client Name", value=st.session_state.name)
+
 budget = st.number_input("Budget (AED)", value=1000000)
-area = st.text_input("Preferred Area")
-timeline = st.selectbox("Timeline", ["1 month", "3 months", "6 months"])
-message = st.text_area("Client Message")
+
+area = st.text_input("Preferred Area", value=st.session_state.area)
+
+timeline = st.selectbox(
+    "Timeline",
+    ["1 month", "3 months", "6 months"]
+)
+
+message = st.text_area(
+    "Client Message",
+    value=st.session_state.get("message", "")
+)
+
 follow_up_date = st.date_input("Next Follow-Up Date")
 #--------------------------------------------------------------------------
 stage = st.selectbox(
@@ -882,11 +893,21 @@ if page == "Dashboard":
 # Lead History 
 if page == "Leads":
 
+    if "name" not in st.session_state:
+        st.session_state.name = ""
+
+    if "area" not in st.session_state:
+        st.session_state.area = ""
+
+    if "message" not in st.session_state:
+        st.session_state.message = ""
+
     if st.button("✨ Try Demo Lead"):
-        name = "Russian Investor"
-        area = "Palm Jumeirah"
-        lead_type = "Investor"
+        st.session_state.name = "Russian Investor"
+        st.session_state.area = "Palm Jumeirah"
+        st.session_state.message = "Looking for investment villa in Palm Jumeirah"
         st.success("Demo lead loaded — click Analyze")
+        st.rerun()
 
     # Leads page: show only
     limit = PLAN_LIMITS.get(st.session_state.plan, 5)
