@@ -1063,7 +1063,7 @@ if page == "Leads":
                     "Copy Message",
                     lead.get("followup_message", ""),
                     height=100,
-                    key=f"copy_msg_{i}"
+                    key=f"copy_msg_{lead['id']}"
                 )
 
             if st.button("🤖 Generate Follow-Up Message", key=f"followup_{lead['id']}"):
@@ -1110,7 +1110,7 @@ if page == "Leads":
                     "Copy Message",
                     lead.get("followup_message", ""),
                     height=100,
-                    key=f"copy_msg_{i}"
+                    key=f"copy_msg_{lead['id']}"
                 )
                   # existing button (mark done)
             if lead.get("follow_up_status") != "Done":
