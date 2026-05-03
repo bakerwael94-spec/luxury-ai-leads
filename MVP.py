@@ -494,16 +494,7 @@ st.info("Takes 30 seconds. You’ll get AI scoring + follow-up instantly.")
 if "leads" not in st.session_state:  ## st.session_state: Streamlit memory (stores values between reruns)
     st.session_state.leads = load_leads()
 #--------------------------------------------------------------------------
-stage = st.selectbox(
-    "Pipeline Stage",
-    ["New Lead", "Contacted", "Viewing Scheduled", "Negotiation", "Closed Won", "Closed Lost"]
-)
 
-property_value = st.number_input("Property Value (AED)", min_value=0, value=8000000)
-
-commission_rate = st.number_input("Commission Rate (%)", min_value=0.0, value=2.0)
-
-expected_commission = property_value * commission_rate / 100
 #--------------------------------------------------------------------------
 
 #--------------------------------------------------------------------------
@@ -721,184 +712,196 @@ if page == "Leads":
     timeline = st.selectbox("Timeline", ["1 month", "3 months", "6 months"])
     message = st.text_area("Client Message", value=st.session_state.message)
     follow_up_date = st.date_input("Next Follow-Up Date")
+
+    stage = st.selectbox(
+        "Pipeline Stage",
+        ["New Lead", "Contacted", "Viewing Scheduled", "Negotiation", "Closed Won", "Closed Lost"]
+    )
+
+    property_value = st.number_input("Property Value (AED)", min_value=0, value=8000000)
+
+    commission_rate = st.number_input("Commission Rate (%)", min_value=0.0, value=2.0)
+
+    expected_commission = property_value * commission_rate / 100
+    st.info(f"Expected Commission: AED {expected_commission:,.0f}")
     #--------------------------------------------------------------------------
     # 🚀 Analyze Button
 
-if st.button("Analyze Lead"):
+    if st.button("Analyze Lead"):
 
-    # Count User Leads
-    #user_leads = [
+        # Count User Leads
+        #user_leads = [
         #lead for lead in st.session_state.leads
         #if lead["user"] == st.session_state.user   
-    #]
+        #]
 
-    if not name or not area:
-        st.warning("Please fill required fields")
-        st.stop()
+        if not name or not area:
+            st.warning("Please fill required fields")
+            st.stop()
 
-    user_plan = st.session_state.plan
-    limit = PLAN_LIMITS.get(user_plan, 5)
+        user_plan = st.session_state.plan
+        limit = PLAN_LIMITS.get(user_plan, 5)
 
-    cursor.execute(
-        "SELECT monthly_leads FROM users WHERE username=?",
-        (st.session_state.user,)
-    )
+        cursor.execute(
+            "SELECT monthly_leads FROM users WHERE username=?",
+            (st.session_state.user,)
+        )
 
-    monthly_leads = cursor.fetchone()[0] or 0
+        monthly_leads = cursor.fetchone()[0] or 0
 
-    # 🚀 Apply limit ONLY for FREE users
-    if user_plan == "free" and monthly_leads >= limit:
-        st.error("Your free monthly lead limit has been reached.")
-        st.info("Upgrade to Pro to unlock unlimited lead analysis.")
-        st.link_button("🚀 Upgrade to Pro", PRO_LINK)
-        st.stop()
+        # 🚀 Apply limit ONLY for FREE users
+        if user_plan == "free" and monthly_leads >= limit:
+            st.error("Your free monthly lead limit has been reached.")
+            st.info("Upgrade to Pro to unlock unlimited lead analysis.")
+            st.link_button("🚀 Upgrade to Pro", PRO_LINK)
+            st.stop()
 
-    # Show remaining ONLY for free users
-    if user_plan == "free":
-        remaining = limit - monthly_leads
-        st.info(f"Monthly free leads remaining: {remaining}")
+        # Show remaining ONLY for free users
+        if user_plan == "free":
+            remaining = limit - monthly_leads
+            st.info(f"Monthly free leads remaining: {remaining}")
 
 
-    # Block When Limit Reached
-    #if st.session_state.plan == "free" and len(user_leads) >= FREE_LIMIT:
+        # Block When Limit Reached
+        #if st.session_state.plan == "free" and len(user_leads) >= FREE_LIMIT:
         #st.warning("Free plan limit reached. Upgrade to Pro.")
         #st.stop()
-    # 🔹 Scoring
-    score = 0
+        # 🔹 Scoring
+        score = 0
 
-    if budget > 5000000:
-        score += 50
+        if budget > 5000000:
+            score += 50
 
-    if "investment" in message.lower(): # .lower() is detecting uppercase or lowercase words
-        score += 30
+        if "investment" in message.lower(): # .lower() is detecting uppercase or lowercase words
+            score += 30
 
-    if timeline == "1 month":
-        score += 20
+        if timeline == "1 month":
+            score += 20
 
-    # 🔹 Classification
-    if score >= 80:
-        quality = "High"
-    elif score >= 50:
-        quality = "Medium"
-    else:
-        quality = "Low"
+            # 🔹 Classification
+        if score >= 80:
+            quality = "High"
+        elif score >= 50:
+            quality = "Medium"
+        else:
+            quality = "Low"
 
-  # Deal probability
-    probability = min(95, score + 10)
+        # Deal probability
+        probability = min(95, score + 10)
 
-    if "investment" in message.lower():
-        lead_type = "Investor"
-    else:
-        lead_type = "End-user"
+        if "investment" in message.lower():
+            lead_type = "Investor"
+        else:
+            lead_type = "End-user"
 
-    # 📊 Display Results
-    st.write(f"### Lead Score: {score}")
-    st.write(f"### Quality: {quality}")
-    st.write(f"### Type: {lead_type}")
+        # 📊 Display Results
+        st.write(f"### Lead Score: {score}")
+        st.write(f"### Quality: {quality}")
+        st.write(f"### Type: {lead_type}")
 
-    # 🤖 AI Prompt
-    prompt = f"""
-    You are a luxury real estate broker in Dubai.
+        # 🤖 AI Prompt
+        prompt = f"""
+        You are a luxury real estate broker in Dubai.
 
-    Client name: {name}
-    Area: {area}
-    Budget: {budget}
-    Timeline: {timeline}
-    Client type: {lead_type}
-    Lead quality: {quality}
+        Client name: {name}
+        Area: {area}
+        Budget: {budget}
+        Timeline: {timeline}
+        Client type: {lead_type}
+        Lead quality: {quality}
 
-    Write a short WhatsApp-style follow-up message.
-    Do NOT include a subject line.
-    Make it feel natural, premium, and direct.
-    """
+        Write a short WhatsApp-style follow-up message.
+        Do NOT include a subject line.
+        Make it feel natural, premium, and direct.
+        """
 
-    response = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[
-            {"role": "user", "content": prompt}
-        ]
-    )
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "user", "content": prompt}
+            ]
+        )
 
-    ai_message = response.choices[0].message.content
+        ai_message = response.choices[0].message.content
 
-    strategy_prompt = f"""
-    You are a senior luxury real estate sales strategist in Dubai.
+        strategy_prompt = f"""
+        You are a senior luxury real estate sales strategist in Dubai.
 
-    Lead details:
-    Name: {name}
-    Area: {area}
-    Budget: {budget}
-    Timeline: {timeline}
-    Lead type: {lead_type}
-    Lead quality: {quality}
-    Close probability: {probability}%
-    Pipeline stage: {stage}
-    Property value: AED {property_value}
-    Expected commission: AED {expected_commission}
+        Lead details:
+        Name: {name}
+        Area: {area}
+        Budget: {budget}
+        Timeline: {timeline}
+        Lead type: {lead_type}
+        Lead quality: {quality}
+        Close probability: {probability}%
+        Pipeline stage: {stage}
+        Property value: AED {property_value}
+        Expected commission: AED {expected_commission}
 
-    Give a short deal strategy with:
-    1. Next best action
-    2. Negotiation strategy
-    3. When to push or wait
-    4. Main risk
-    """
+        Give a short deal strategy with:
+        1. Next best action
+        2. Negotiation strategy
+        3. When to push or wait
+        4. Main risk
+        """
 
-    strategy_response = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[
-            {"role": "user", "content": strategy_prompt}
-        ]
-    )
+        strategy_response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "user", "content": strategy_prompt}
+            ]
+        )
 
-    ai_strategy = strategy_response.choices[0].message.content
+        ai_strategy = strategy_response.choices[0].message.content
 
 
 
-    # 💬 Show AI message
-    st.write("### AI Suggested Message:")
-    st.success(ai_message)
+        # 💬 Show AI message
+        st.write("### AI Suggested Message:")
+        st.success(ai_message)
   
-    with st.expander("📊 View AI Strategy"):
-        st.write(ai_strategy)
+        with st.expander("📊 View AI Strategy"):
+            st.write(ai_strategy)
 
 
-    # 💾 Save lead
-    cursor.execute("""
-    INSERT INTO leads (
-        name, score, quality, type, probability, area, message, user,
-        stage, property_value, commission_rate, expected_commission, ai_strategy, follow_up_date, follow_up_status
-    )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    """, (
-        name,
-        score,
-        quality,
-        lead_type,
-        probability,
-        area,
-        ai_message,
-        st.session_state.user,
-        stage,
-        property_value,
-        commission_rate,
-        expected_commission,
-        ai_strategy,
-        follow_up_date.strftime("%Y-%m-%d"),
-        "Pending"
-    ))
+            # 💾 Save lead
+        cursor.execute("""
+        INSERT INTO leads (
+            name, score, quality, type, probability, area, message, user,
+            stage, property_value, commission_rate, expected_commission, ai_strategy, follow_up_date, follow_up_status
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            name,
+            score,
+            quality,
+            lead_type,
+            probability,
+            area,
+            ai_message,
+            st.session_state.user,
+            stage,
+            property_value,
+            commission_rate,
+            expected_commission,
+            ai_strategy,
+            follow_up_date.strftime("%Y-%m-%d"),
+            "Pending"
+        ))
 
-    st.session_state.stats["leads_created"] += 1 ## Count Leads
+        st.session_state.stats["leads_created"] += 1 ## Count Leads
 
-    # Increase monthly usage after lead is saved
-    cursor.execute(
-        "UPDATE users SET monthly_leads = monthly_leads + 1 WHERE username=?",
-        (st.session_state.user,)
-    )
+        # Increase monthly usage after lead is saved
+        cursor.execute(
+            "UPDATE users SET monthly_leads = monthly_leads + 1 WHERE username=?",
+            (st.session_state.user,)
+        )
 
-    conn.commit()
-    st.session_state.leads = load_leads()
+        conn.commit()
+        st.session_state.leads = load_leads()
 
-    #pd.DataFrame(st.session_state.leads).to_csv(DB_FILE, index=False) # Save Leads to Database
+        #pd.DataFrame(st.session_state.leads).to_csv(DB_FILE, index=False) # Save Leads to Database
 
 
 
