@@ -504,7 +504,7 @@ if "leads" not in st.session_state:  ## st.session_state: Streamlit memory (stor
 
 page = st.sidebar.radio(
     "Navigation",
-    ["Home","Dashboard", "Leads", "Analytics", "Pricing", "Admin"]
+    ["Home","Leads", "Dashboard", "Analytics", "Pricing", "Admin"]
 )
 # 
 
