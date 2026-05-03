@@ -51,6 +51,7 @@ from email.mime.text import MIMEText  # ✔
 import hashlib # Import hashlib   # ✔
 import random  # ✔
 import sqlite3  # ✔
+PRO_LINK = "https://buy.stripe.com/test_8x24gy95I9s5duR1Qz8AE00"
 #--------------------------------------------------------------------------
 def safe_float(value):
     try:
@@ -155,6 +156,12 @@ try:
     cursor.execute("ALTER TABLE leads ADD COLUMN followup_message TEXT")
 except:
     pass
+
+try:
+    cursor.execute("ALTER TABLE users ADD COLUMN trial_start TEXT")
+except:
+    pass
+
 
 conn.commit() # save changes to the database permanently 💾  # ✔
 
@@ -329,16 +336,38 @@ if not st.session_state.logged_in:  # ✔
                 st.session_state.logged_in = True  # ✔
                 st.session_state.user = user[0]  # ✔
                 st.session_state.plan = user[2]  # ✔
-              # initialize trial / This code stores the start date of a trial in Streamlit session state 📅
 
-                if "trial_start" not in st.session_state:  # ✔
-                    st.session_state.trial_start = datetime.date.today()  # ✔
-                   ## # Calculate Trial Days
-                today = datetime.date.today()  # ✔
-                trial_days_used = (today - st.session_state.trial_start).days  # ✔
-                   ## # Give trial access
-                if st.session_state.plan == "free" and trial_days_used < TRIAL_DAYS:  # ✔
-                    st.session_state.plan = "trial"  # ✔
+                cursor.execute(
+                    "SELECT trial_start FROM users WHERE username=?",
+                    (st.session_state.user,)
+                )
+
+                trial_data = cursor.fetchone()
+
+                if trial_data and not trial_data[0]:
+                    today = datetime.date.today().strftime("%Y-%m-%d")
+
+                    cursor.execute(
+                        "UPDATE users SET trial_start=? WHERE username=?",
+                        (today, st.session_state.user)
+                    )
+                    conn.commit()
+
+                cursor.execute(
+                    "SELECT trial_start FROM users WHERE username=?",
+                    (st.session_state.user,)
+                )
+
+                trial_start = cursor.fetchone()[0]
+
+                if trial_start:
+                    trial_start_date = datetime.datetime.strptime(trial_start, "%Y-%m-%d").date()
+                    today = datetime.date.today()
+
+                    trial_days_used = (today - trial_start_date).days
+
+                    if st.session_state.plan == "free" and trial_days_used < TRIAL_DAYS:
+                        st.session_state.plan = "trial"
 
                 # -------- Monthly Reset Logic --------
                 current_month = today.strftime("%Y-%m")
@@ -353,12 +382,12 @@ if not st.session_state.logged_in:  # ✔
                 if usage_data:
                     usage_month, monthly_leads = usage_data
 
-                if usage_month != current_month:
-                    cursor.execute(
-                        "UPDATE users SET usage_month=?, monthly_leads=? WHERE username=?",
-                        (current_month, 0, st.session_state.user)
-                    )
-                    conn.commit()
+                    if usage_month != current_month:
+                        cursor.execute(
+                            "UPDATE users SET usage_month=?, monthly_leads=? WHERE username=?",
+                            (current_month, 0, st.session_state.user)
+                        )
+                        conn.commit()
     # ------------------------------------
 
                 st.rerun()  # ✔
@@ -489,6 +518,11 @@ if st.button("Analyze Lead"):
         #lead for lead in st.session_state.leads
         #if lead["user"] == st.session_state.user   
     #]
+
+    if not name or not area:
+        st.warning("Please fill required fields")
+        st.stop()
+
     user_plan = st.session_state.plan
     limit = PLAN_LIMITS.get(user_plan, 5)
 
@@ -499,13 +533,16 @@ if st.button("Analyze Lead"):
 
     monthly_leads = cursor.fetchone()[0] or 0
 
-    if monthly_leads >= limit:
-        st.warning("Monthly limit reached. Upgrade to Pro.")
+    # 🚀 Apply limit ONLY for FREE users
+    if user_plan == "free" and monthly_leads >= limit:
+        st.error("Your free monthly lead limit has been reached.")
+        st.info("Upgrade to Pro to unlock unlimited lead analysis.")
+        st.link_button("🚀 Upgrade to Pro", PRO_LINK)
         st.stop()
 
-    remaining = limit - monthly_leads
-
+    # Show remaining ONLY for free users
     if user_plan == "free":
+        remaining = limit - monthly_leads
         st.info(f"Monthly free leads remaining: {remaining}")
 
 
@@ -659,36 +696,58 @@ page = st.sidebar.radio(
     ["Home","Dashboard", "Leads", "Analytics", "Pricing", "Admin"]
 )
 # 
-PRO_LINK = "https://buy.stripe.com/test_8x24gy95I9s5duR1Qz8AE00"
+
 
 st.sidebar.markdown("---")
 # Show User in Sidebar
 st.sidebar.write(f"👤 {st.session_state.user}") 
 # Show Plan in Sidebar
 st.sidebar.write(f"Plan: {st.session_state.plan.upper()}")
-## Sidebar (Plan + Upgrade UI)
-if st.session_state.plan == "free":
-    st.sidebar.warning("Free Plan limited to 5 leads")
-    st.sidebar.link_button("🚀 Upgrade to Pro", PRO_LINK)
+
 
 if st.session_state.plan == "trial":
+
+    cursor.execute(
+        "SELECT trial_start FROM users WHERE username=?",
+        (st.session_state.user,)
+    )
+
+    trial_start = cursor.fetchone()[0]
+
+    trial_start_date = datetime.datetime.strptime(trial_start, "%Y-%m-%d").date()
     today = datetime.date.today()
-    trial_days_used = (today - st.session_state.trial_start).days
-    remaining = max(0, TRIAL_DAYS - trial_days_used)
 
-    st.sidebar.success(f"Trial: {remaining} days left")
-## usage display in sidebar
-cursor.execute(
-    "SELECT monthly_leads FROM users WHERE username=?",
-    (st.session_state.user,)
-)
-monthly_leads = cursor.fetchone()[0] or 0
+    trial_days_used = (today - trial_start_date).days
+    remaining = TRIAL_DAYS - trial_days_used
 
-limit = PLAN_LIMITS.get(st.session_state.plan, 5)
+    if remaining > 0:
+        st.sidebar.success(f"Trial: {remaining} days left")
+    else:
+        st.sidebar.error("Trial expired. You are now on Free plan.")
+        st.sidebar.link_button("🚀 Upgrade to Pro", PRO_LINK)
 
-st.sidebar.write(f"Usage: {monthly_leads}/{limit}")
+# ---------- FREE PLAN ----------
+elif st.session_state.plan == "free":
+
+    cursor.execute(
+        "SELECT monthly_leads FROM users WHERE username=?",
+        (st.session_state.user,)
+    )
+
+    monthly_leads = cursor.fetchone()[0] or 0
+    limit = PLAN_LIMITS.get("free", 5)
+
+    remaining = max(0, limit - monthly_leads)
+
+    st.sidebar.warning(f"Free Plan: {remaining} leads remaining")
+
+    st.sidebar.link_button("🚀 Upgrade to Pro", PRO_LINK)
 
 
+
+# ---------- PRO PLAN ----------
+elif st.session_state.plan == "pro":
+    st.sidebar.success("Pro Plan — Unlimited Access 🚀")
 
 
 # Add Logout Button in Sidebar
@@ -819,7 +878,12 @@ if page == "Dashboard":
 # Lead History 
 if page == "Leads":
 
-  
+    if st.button("✨ Try Demo Lead"):
+        name = "Russian Investor"
+        area = "Palm Jumeirah"
+        lead_type = "Investor"
+        st.success("Demo lead loaded — click Analyze")
+
     # Leads page: show only
     limit = PLAN_LIMITS.get(st.session_state.plan, 5)
 
@@ -983,7 +1047,7 @@ if page == "Leads":
             
 
             st.info(lead["message"])
-            st.code(lead["message"])
+            st.text_area("Copy Message", lead["message"], height=100)
             if lead.get("ai_strategy"):
                 st.write("### 🧠 AI Deal Strategy")
                 st.warning(lead["ai_strategy"])
@@ -991,7 +1055,7 @@ if page == "Leads":
             if lead.get("followup_message"):
                 st.write("### 📲 Saved Follow-Up Message")
                 st.success(lead["followup_message"])
-                st.code(lead["followup_message"])
+                st.text_area("Copy Message", lead["followup_message"], height=100)
 
             if st.button("🤖 Generate Follow-Up Message", key=f"followup_{lead['id']}"):
 
@@ -1033,7 +1097,7 @@ if page == "Leads":
 
                 st.write("### 📲 Follow-Up Message")
                 st.success(followup_message)
-                st.code(followup_message)
+                st.text_area("Copy Message", lead["followup_message"], height=100)
                   # existing button (mark done)
             if lead.get("follow_up_status") != "Done":
                 if st.button("✅ Mark Follow-Up Done", key=f"done_{lead['id']}"):
@@ -1092,13 +1156,19 @@ if page == "Pricing":
 
 if page == "Home":
 
-    st.title("🏡 Luxury AI")
-    st.subheader("AI-Powered Real Estate Lead Intelligence")
+
+    st.success("🚀 Start by creating your first lead in the Leads page")
+    st.info("Takes 30 seconds. You’ll get AI scoring + follow-up instantly.")
+
+    st.title("🏡 Close High-Value Real Estate Deals Faster with AI")
 
     st.write("""
-    Close more deals with AI-driven insights.
-    Analyze leads, predict conversions, and generate high-end follow-ups instantly.
+    Identify serious buyers, predict deal probability, and send high-converting follow-ups instantly.
     """)
+
+    st.subheader("AI-Powered Real Estate Lead Intelligence")
+
+    
 
     st.divider()
 
@@ -1120,7 +1190,7 @@ if page == "Home":
     ✔ Multi-user platform  
     """)
 
-    st.divider()
+    #st.divider()
 
     if st.session_state.plan == "free":
         st.warning("Start your free trial now 🚀")
@@ -1172,10 +1242,11 @@ if page == "Home":
     st.divider()
     st.subheader("🎥 Product Demo Coming Soon")
 
-    st.info("""
-    A short demo video will be added soon showing how Luxury AI analyzes leads,
-    predicts deal probability, and generates premium follow-up messages.
-    """)
+    #st.info("""
+    #A short demo video will be added soon showing how Luxury AI analyzes leads,
+    #predicts deal probability, and generates premium follow-up messages.
+   #""")
+    st.info("Demo: AI analyzes a Palm Jumeirah investor and suggests ROI strategy + follow-up")
 
 if page == "Admin":
 
