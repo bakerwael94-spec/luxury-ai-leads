@@ -1059,7 +1059,12 @@ if page == "Leads":
             if lead.get("followup_message"):
                 st.write("### 📲 Saved Follow-Up Message")
                 st.success(lead["followup_message"])
-                st.text_area("Copy Message", lead["followup_message"], height=100)
+                st.text_area(
+                    "Copy Message",
+                    lead.get("followup_message", ""),
+                    height=100,
+                    key=f"copy_msg_{i}"
+                )
 
             if st.button("🤖 Generate Follow-Up Message", key=f"followup_{lead['id']}"):
 
@@ -1101,7 +1106,12 @@ if page == "Leads":
 
                 st.write("### 📲 Follow-Up Message")
                 st.success(followup_message)
-                st.text_area("Copy Message", lead["followup_message"], height=100)
+                st.text_area(
+                    "Copy Message",
+                    lead.get("followup_message", ""),
+                    height=100,
+                    key=f"copy_msg_{i}"
+                )
                   # existing button (mark done)
             if lead.get("follow_up_status") != "Done":
                 if st.button("✅ Mark Follow-Up Done", key=f"done_{lead['id']}"):
