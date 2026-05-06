@@ -167,20 +167,15 @@ conn.commit() # save changes to the database permanently 💾  # ✔
 
 #--------------------------------------------------------------------------
 # Create users table
+# Create users table
 cursor.execute("""
 CREATE TABLE IF NOT EXISTS users (
     username TEXT PRIMARY KEY,
     password TEXT,
     plan TEXT,
-    email TEXT          
-
+    email TEXT
 )
 """)
-# Add monthly usage columns if they do not exist
-try:
-    cursor.execute("ALTER TABLE users ADD COLUMN email TEXT")
-except:
-    pass
 
 try:
     cursor.execute("ALTER TABLE users ADD COLUMN usage_month TEXT")
@@ -192,7 +187,28 @@ try:
 except:
     pass
 
-conn.commit()  # ✔
+try:
+    cursor.execute("ALTER TABLE users ADD COLUMN trial_start TEXT")
+except:
+    pass
+
+conn.commit()
+#--------------------------------------------------------------------------
+cursor.execute("""
+INSERT OR REPLACE INTO users 
+(username, password, plan, email, usage_month, monthly_leads, trial_start)
+VALUES (?, ?, ?, ?, ?, ?, ?)
+""", (
+    "admin",
+    hash_password("1234"),
+    "pro",
+    "admin@test.com",
+    None,
+    0,
+    None
+))
+
+conn.commit()
 #--------------------------------------------------------------------------  
 # Save Requests (Database)
 cursor.execute("""
